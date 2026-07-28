@@ -41,6 +41,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Noto
 .search-results .sr-item:last-child{border-bottom:none}
 .search-results .sr-item:hover{background:var(--surface-2);color:var(--blue)}
 .search-results .sr-item .sr-code{color:var(--text-3);margin-left:6px;font-family:"SF Mono",Consolas,monospace}
+.search-results .sr-star{cursor:pointer;user-select:none;margin-right:4px;color:var(--text-3);transition:var(--transition)}
+.search-results .sr-star:hover{color:var(--gold)}
 
 /* ─── Summary Bar ─── */
 .summary-bar{display:flex;gap:16px;align-items:center;padding:12px 0;font-size:12px;color:var(--text-2);flex-wrap:wrap}
@@ -86,6 +88,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Noto
 .ht td:first-child{text-align:left;color:var(--text-2);font-family:"SF Mono",Consolas,monospace}
 .ht td:nth-child(2){text-align:left;color:var(--text-2)}
 .up{color:var(--up)}.dn{color:var(--down)}.fl{color:var(--text-3)}
+.star{cursor:pointer;user-select:none;transition:var(--transition);font-size:14px;vertical-align:middle}
+.star-on{color:var(--gold)}.star-off{color:var(--text-3)}.star-off:hover{color:var(--gold);opacity:.7}
 .bar{height:3px;background:var(--surface-2);border-radius:2px;margin-top:4px;overflow:hidden}
 .bar-in{height:100%;border-radius:2px;transition:var(--transition)}
 .expand-hint{font-size:10px;color:var(--text-3);text-align:center;padding:4px 0 0;cursor:pointer;transition:var(--transition);user-select:none}
@@ -148,7 +152,8 @@ footer{text-align:center;color:var(--text-3);font-size:10px;padding:10px 0 20px;
 <div class="container">
   <div class="summary-bar" id="sb"></div>
   <div class="sort-tabs" id="stabs">
-    <button class="st-btn active" data-sort="default">默认</button>
+    <button class="st-btn active" data-sort="default">全部</button>
+    <button class="st-btn" data-sort="fav">⭐ 自选</button>
     <button class="st-btn" data-sort="gain">📈 涨幅</button>
     <button class="st-btn" data-sort="loss">📉 跌幅</button>
     <button class="st-btn" data-sort="name">名称 A-Z</button>
@@ -344,6 +349,8 @@ function rc(f){
   var sectorBadge = f.sector ? '<span style="font-size:10px;color:var(--text-3);background:var(--surface-2);padding:1px 6px;border-radius:3px;margin-left:6px">'+f.sector+'</span>' : '';
   var navText = f.nav ? '<span class="nav-info">净值: ' + f.nav + ' (' + f.date + ')</span>' : '';
   var estVal = arrow + ' ' + sign + est.toFixed(2) + '%';
+  var starred = isFavorite(f.code) ? '★' : '☆';
+  var starCls = isFavorite(f.code) ? 'star-on' : 'star-off';
 
   return '<div class="fc" data-code="'+f.code+'" data-name="'+f.name+'">'+
     '<div class="fc-hdr">'+
@@ -373,9 +380,19 @@ function renderAll(filter){
       var lf = filter.toLowerCase();
       if(f.code.indexOf(lf) === -1 && f.name.toLowerCase().indexOf(lf) === -1) return;
     }
+    // Filter by favorites when in fav mode
+    if(curSort === 'fav' && getFavorites().indexOf(f.code) === -1) return;
     html += rc(f);
   });
   document.getElementById('fg').innerHTML = html;
+
+  // Star click handlers
+  document.querySelectorAll('.star').forEach(function(s){
+    s.addEventListener('click', function(e){
+      e.stopPropagation();
+      toggleFavorite(this.dataset.scode);
+    });
+  });
 
   // Bind expand/collapse
   document.querySelectorAll('.fc').forEach(function(card){
@@ -444,8 +461,11 @@ function updateSummary(){
   var best = keys.reduce(function(a,b){ return ((FD[a].est||0) > (FD[b].est||0)) ? a : b; });
   var worst = keys.reduce(function(a,b){ return ((FD[a].est||0) < (FD[b].est||0)) ? a : b; });
 
+  var faves = getFavorites();
+  var favCount = keys.filter(function(k){ return faves.indexOf(k) > -1; }).length;
   document.getElementById('sb').innerHTML =
     '<span class="sb-item">基金: <span class="sb-num">'+keys.length+'</span> 只</span>'+
+    '<span class="sb-item" style="color:var(--gold)">⭐ '+favCount+'</span>'+
     '<span class="sb-item"><span class="badge up-b">▲ '+up+'</span></span>'+
     '<span class="sb-item"><span class="badge dn-b">▼ '+dn+'</span></span>'+
     (flat ? '<span class="sb-item">平 '+flat+'</span>' : '')+
@@ -558,6 +578,32 @@ function updateNextRefresh(){
   document.getElementById('snext').textContent = '下次刷新: ' + next.toLocaleTimeString('zh-CN');
 }
 
+/* ─── 自选管理 ─── */
+function getFavorites(){
+  try {
+    return JSON.parse(localStorage.getItem('stockHeatFav') || '[]');
+  } catch(e) { return []; }
+}
+
+function saveFavorites(faves){
+  localStorage.setItem('stockHeatFav', JSON.stringify(faves));
+}
+
+function toggleFavorite(code){
+  var faves = getFavorites();
+  var idx = faves.indexOf(code);
+  if(idx > -1) faves.splice(idx, 1);
+  else faves.push(code);
+  saveFavorites(faves);
+  renderAll(currentFilter);
+  updateSortButtons();
+  return faves.indexOf(code) > -1;
+}
+
+function isFavorite(code){
+  return getFavorites().indexOf(code) > -1;
+}
+
 /* ─── Search ─── */
 var currentFilter = '';
 var searchTimeout = null;
@@ -587,13 +633,21 @@ document.getElementById('si').addEventListener('input', function(){
 
   if(matches.length > 0){
     sr.innerHTML = matches.map(function(m){
-      return '<div class="sr-item" data-code="'+m.code+'">'+m.name+'<span class="sr-code">'+m.code+'</span></div>';
+      var inFav = isFavorite(m.code);
+      return '<div class="sr-item" data-code="'+m.code+'">'+
+        '<span class="sr-star" data-scode="'+m.code+'">'+(inFav?'★':'☆')+'</span> '+
+        m.name+'<span class="sr-code">'+m.code+'</span></div>';
     }).join('');
     sr.classList.add('show');
 
     // Click handler
     sr.querySelectorAll('.sr-item').forEach(function(item){
-      item.addEventListener('click', function(){
+      item.addEventListener('click', function(e){
+        if(e.target.classList.contains('sr-star')){
+          var code = e.target.dataset.scode;
+          toggleFavorite(code);
+          return;
+        }
         var code = this.dataset.code;
         document.getElementById('si').value = code;
         sr.classList.remove('show');
