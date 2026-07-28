@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>?? A????? ? ????</title>
+<style>
+:root {
+  --bg: #080C16;
+  --bg-alt: #0E1525;
+  --surface: #141C2E;
+  --surface-alt: #1A2440;
+  --border: #253050;
+  --text: #EAF0FF;
+  --text-muted: #7C8AAA;
+  --text-dim: #55607A;
+  --gold: #C9A84C;
+  --gold-light: #E8D48B;
+  --accent: #5B8DEF;
+  --accent-bg: rgba(91,141,239,0.12);
+  --up: #F05A5A;
+  --up-bg: rgba(240,90,90,0.12);
+  --down: #2EC4B6;
+  --down-bg: rgba(46,196,182,0.12);
+  --font: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font); background: var(--bg); color: var(--text);
+  min-height: 100vh; -webkit-font-smoothing: antialiased;
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+
+/* Header */
+header {
+  text-align: center; padding: 24px 16px; margin-bottom: 20px;
+  background: linear-gradient(135deg, #0E1A2E 0%, #141C2E 50%, #1A2440 100%);
+  border: 1px solid var(--border); border-radius: 14px; position: relative;
+}
+header h1 { font-size: 1.4em; color: var(--gold-light); margin-bottom: 4px; }
+header .sub { color: var(--text-muted); font-size: 0.82em; }
+header .bar {
+  display: flex; justify-content: center; align-items: center; gap: 16px;
+  margin-top: 10px; flex-wrap: wrap;
+}
+header .time { color: var(--gold); font-size: 0.75em; opacity: 0.8; }
+header .btn {
+  background: var(--accent-bg); color: var(--accent);
+  border: 1px solid rgba(91,141,239,0.2); padding: 6px 16px;
+  border-radius: 999px; font-size: 0.75em; cursor: pointer;
+  font-weight: 500; transition: all 0.2s;
+}
+header .btn:hover { background: rgba(91,141,239,0.2); border-color: rgba(91,141,239,0.4); }
+header .btn:disabled { opacity: 0.5; cursor: wait; }
+
+/* Section */
+.section { margin-bottom: 24px; }
+.section-title {
+  font-size: 0.85em; color: var(--gold); letter-spacing: 0.03em;
+  margin-bottom: 12px; padding: 8px 12px;
+  background: rgba(201,168,76,0.06); border-radius: 8px;
+  border-left: 3px solid var(--gold);
+}
+
+/* Grid */
+.grid { display: grid; gap: 10px; }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+/* Cards */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; transition: all 0.2s;
+}
+.card:hover { border-color: var(--gold); background: var(--surface-alt); }
+.card .name { font-size: 0.75em; color: var(--text-muted); margin-bottom: 4px; }
+.card .price { font-size: 1.1em; font-weight: 600; font-family: var(--font-mono); }
+.card .pct { font-size: 0.82em; font-weight: 500; font-family: var(--font-mono); margin-top: 2px; }
+.up { color: var(--up); }
+.down { color: var(--down); }
+.flat { color: var(--text-muted); }
+.tag {
+  display: inline-block; font-size: 0.62em; padding: 1px 6px;
+  border-radius: 999px; margin-left: 4px; vertical-align: middle;
+}
+
+/* Table */
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%; border-collapse: collapse; font-size: 0.82em;
+}
+th {
+  text-align: left; padding: 8px 10px; color: var(--text-muted);
+  border-bottom: 1px solid var(--border); font-weight: 500;
+  position: sticky; top: 0; background: var(--bg);
+}
+td {
+  padding: 8px 10px; border-bottom: 1px solid var(--border-light, #1E2840);
+  font-family: var(--font-mono); font-size: 0.95em;
+}
+td:first-child { font-family: var(--font); }
+tr:hover { background: rgba(255,255,255,0.02); }
+
+/* Loading */
+.loading {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 60px 20px;
+}
+.spinner {
+  width: 32px; height: 32px; border: 3px solid var(--border);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin 0.8s linear infinite; margin-bottom: 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.hidden { display: none !important; }
+
+.footer {
+  text-align: center; color: var(--text-dim); font-size: 0.7em;
+  padding: 20px 0; border-top: 1px solid #1E2840; margin-top: 20px;
+}
+
+@media (max-width: 640px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <h1>?? A????? ? ????</h1>
+  <div class="sub">???? ? ???? ? ????</div>
+  <div class="bar">
+    <span class="time" id="updateTime">? ???...</span>
+    <button class="btn" id="refreshBtn" onclick="refresh()">?? ????</button>
+  </div>
+</header>
+
+<div id="loading" class="loading"><div class="spinner"></div><div style="font-size:0.85em;color:var(--text-muted);">????????...</div></div>
+
+<div id="content" class="hidden">
+
+  <!-- Major Indices -->
+  <div class="section">
+    <div class="section-title">?? ????</div>
+    <div class="grid grid-4" id="indexGrid"></div>
+  </div>
+
+  <!-- Sector ETFs -->
+  <div class="section">
+    <div class="section-title">?? ???? ETF</div>
+    <div class="grid grid-4" id="etfGrid"></div>
+  </div>
+
+  <!-- Key Stocks -->
+  <div class="section">
+    <div class="section-title">?? ????</div>
+    <div class="grid grid-3" id="stockGrid"></div>
+  </div>
+
+  <!-- Market Sentiment -->
+  <div class="section">
+    <div class="section-title">?? ????</div>
+    <div id="sentimentPanel"></div>
+  </div>
+
+</div>
+
+<div class="footer">
+  ????????? ? ???? ? ?????
+</div>
+</div>
+
+<script>
+const INDICES = [
+  {code:"sh000001", name:"????"},
+  {code:"sz399001", name:"????"},
+  {code:"sz399006", name:"????"},
+  {code:"sh000688", name:"??50"},
+];
+const ETFS = [
+  {code:"sz159995", name:"???ETF"},
+  {code:"sh512480", name:"???ETF"},
+  {code:"sh512760", name:"??ETF"},
+  {code:"sz159813", name:"???ETF"},
+  {code:"sh515700", name:"???ETF"},
+  {code:"sz159997", name:"??ETF"},
+  {code:"sh512100", name:"1000ETF"},
+  {code:"sh512660", name:"??ETF"},
+  {code:"sh512880", name:"??ETF"},
+  {code:"sh512010", name:"??ETF"},
+  {code:"sh588000", name:"??50ETF"},
+  {code:"sz159841", name:"??ETF"},
+];
+const STOCKS = [
+  {code:"sh600519", name:"????"},
+  {code:"sh688981", name:"????"},
+  {code:"sh688012", name:"????"},
+  {code:"sz300750", name:"????"},
+  {code:"sz000858", name:"???"},
+  {code:"sh600036", name:"????"},
+  {code:"sh601318", name:"????"},
+  {code:"sz002594", name:"???"},
+  {code:"sh600900", name:"????"},
+  {code:"sz300059", name:"????"},
+  {code:"sh601012", name:"????"},
+  {code:"sz002475", name:"????"},
+];
+
+function parseTencent(line) {
+  const m = line.match(/v_[^=]+="([^"]+)"/);
+  if (!m) return null;
+  const p = m[1].split("~");
+  return {
+    name: p[1], code: p[2], price: parseFloat(p[3]) || 0,
+    change: parseFloat(p[31]) || 0, changePct: parseFloat(p[32]) || 0,
+    high: parseFloat(p[33]) || 0, low: parseFloat(p[34]) || 0,
+    open: parseFloat(p[5]) || 0, volume: parseFloat(p[6]) || 0,
+    turnover: parseFloat(p[7]) || 0
+  };
+}
+
+async function fetchData(codes) {
+  const r = await fetch("https://qt.gtimg.cn/q=" + codes);
+  const buf = await r.arrayBuffer();
+  const dec = new TextDecoder("gbk");
+  return dec.decode(buf);
+}
+
+function cls(v) { return v > 0 ? "up" : v < 0 ? "down" : "flat"; }
+function arrow(v) { return v > 0 ? "?" : v < 0 ? "?" : "?"; }
+function fmt(v) { return (v > 0 ? "+" : "") + v.toFixed(2); }
+
+function renderCard(item, grid, showFull) {
+  const c = cls(item.changePct);
+  const html = '<div class="card"><div class="name">' + item.name + '</div>'
+    + '<div class="price ' + c + '">' + item.price.toFixed(item.price<10?3:2) + '</div>'
+    + '<div class="pct ' + c + '">' + arrow(item.changePct) + " " + fmt(item.changePct) + "%</div>"
+    + (showFull ? '<div style="font-size:0.7em;color:var(--text-dim);margin-top:4px;">'
+      + '? ' + item.high.toFixed(2) + " ? " + item.low.toFixed(2) + "</div>" : "")
+    + "</div>";
+  grid.innerHTML += html;
+}
+
+function renderTable(items, cols) {
+  let html = '<div class="table-wrap"><table><tr>';
+  cols.forEach(c => html += "<th>" + c + "</th>");
+  html += "</tr>";
+  items.forEach(item => {
+    const c = cls(item.changePct);
+    html += "<tr><td>" + item.name + "</td>"
+      + "<td>" + item.price.toFixed(item.price<10?3:2) + "</td>"
+      + '<td class="' + c + '">' + arrow(item.changePct) + " " + fmt(item.changePct) + "%</td>"
+      + "<td>" + item.code + "</td></tr>";
+  });
+  html += "</table></div>";
+  return html;
+}
+
+async function refresh() {
+  const btn = document.getElementById("refreshBtn");
+  btn.disabled = true; btn.textContent = "? ???...";
+  await fetchAll();
+  btn.disabled = false; btn.textContent = "?? ????";
+}
+
+async function fetchAll() {
+  try {
+    const allCodes = [...INDICES, ...ETFS, ...STOCKS].map(s => s.code).join(",");
+    const raw = await fetchData(allCodes);
+    const lines = raw.split("
+").filter(Boolean);
+    const items = {};
+    lines.forEach(line => {
+      const item = parseTencent(line);
+      if (item) items[item.code] = item;
+    });
+
+    // Indices
+    const idxGrid = document.getElementById("indexGrid"); idxGrid.innerHTML = "";
+    INDICES.forEach(s => { if (items[s.code]) renderCard(items[s.code], idxGrid, true); });
+
+    // ETFs
+    const etfGrid = document.getElementById("etfGrid"); etfGrid.innerHTML = "";
+    ETFS.forEach(s => { if (items[s.code]) renderCard(items[s.code], etfGrid, false); });
+
+    // Stocks
+    const stockGrid = document.getElementById("stockGrid"); stockGrid.innerHTML = "";
+    const shown = new Set();
+    STOCKS.forEach(s => {
+      if (items[s.code] && !shown.has(s.code)) {
+        renderCard(items[s.code], stockGrid, false);
+        shown.add(s.code);
+      }
+    });
+
+    // Sentiment
+    const pctList = Object.values(items).map(i => i.changePct);
+    const avg = pctList.reduce((a,b) => a+b, 0) / pctList.length;
+    const upCount = pctList.filter(p => p > 0).length;
+    const downCount = pctList.filter(p => p < 0).length;
+    const total = pctList.length;
+    let label, color;
+    if (avg > 0.8) { label = "?? ????"; color = "#ef4444"; }
+    else if (avg > 0.2) { label = "?? ??"; color = "#f97316"; }
+    else if (avg > -0.2) { label = "?? ??"; color = "#eab308"; }
+    else if (avg > -0.8) { label = "?? ??"; color = "#06b6d4"; }
+    else { label = "?? ????"; color = "#8b5cf6"; }
+
+    document.getElementById("sentimentPanel").innerHTML =
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;">'
+      + '<div class="card" style="flex:1;min-width:160px;text-align:center;border-left:3px solid '+color+';">'
+      + '<div style="font-size:0.75em;color:var(--text-muted);margin-bottom:4px;">????</div>'
+      + '<div style="font-size:1.2em;font-weight:600;color:'+color+';">'+label+'</div>'
+      + '<div style="font-size:0.8em;color:var(--text-muted);margin-top:4px;">???? '+fmt(avg)+'%</div>'
+      + '</div>'
+      + '<div class="card" style="flex:1;min-width:120px;text-align:center;">'
+      + '<div style="font-size:0.75em;color:var(--text-muted);">?? '+upCount+'</div>'
+      + '<div style="font-size:1.2em;font-weight:600;color:var(--up);">'+((upCount/total*100)||0).toFixed(0)+'%</div>'
+      + '</div>'
+      + '<div class="card" style="flex:1;min-width:120px;text-align:center;">'
+      + '<div style="font-size:0.75em;color:var(--text-muted);">?? '+downCount+'</div>'
+      + '<div style="font-size:1.2em;font-weight:600;color:var(--down);">'+((downCount/total*100)||0).toFixed(0)+'%</div>'
+      + '</div>'
+      + '<div class="card" style="flex:1;min-width:120px;text-align:center;">'
+      + '<div style="font-size:0.75em;color:var(--text-muted);">????</div>'
+      + '<div style="font-size:1.2em;font-weight:600;">'+total+'</div>'
+      + '</div></div>';
+
+    document.getElementById("updateTime").textContent = "? ??? " + new Date().toLocaleString("zh-CN");
+    document.getElementById("loading").classList.add("hidden");
+    document.getElementById("content").classList.remove("hidden");
+  } catch(e) {
+    document.getElementById("loading").innerHTML =
+      '<div style="color:var(--up);">?? ??????: ' + e.message + "</div>";
+  }
+}
+
+fetchAll();
+setInterval(fetchAll, 60000);
+</script>
+</body>
+</html>
