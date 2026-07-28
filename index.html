@@ -463,8 +463,51 @@ function calcEst(f){
   f.est = est;
 }
 
+/* ─── Script-injection stock data loader (bypasses CORS) ─── */
+function loadStockData(codes, timeoutMs){
+  return new Promise(function(resolve, reject){
+    var url = 'https://qt.gtimg.cn/q=' + codes.join(',');
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.charset = 'gbk';
+
+    var timer = setTimeout(function(){
+      script.remove();
+      reject(new Error('数据加载超时'));
+    }, timeoutMs || 8000);
+
+    script.onload = function(){
+      clearTimeout(timer);
+      var data = {};
+      codes.forEach(function(code){
+        var vname = 'v_' + code;
+        var raw = window[vname];
+        if(raw && typeof raw === 'string'){
+          var parts = raw.split('~');
+          if(parts.length > 32){
+            data[code.replace(/^(sh|sz)/,'')] = parseFloat(parts[32]) || 0;
+          }
+        }
+        delete window[vname];
+        delete window[vname.toUpperCase()];
+      });
+      script.remove();
+      resolve(data);
+    };
+
+    script.onerror = function(){
+      clearTimeout(timer);
+      script.remove();
+      reject(new Error('脚本加载失败'));
+    };
+
+    document.head.appendChild(script);
+    script.src = url;
+  });
+}
+
 /* ─── Refresh Data ─── */
-async function refresh(){
+function refresh(){
   var btn = document.getElementById('rbtn');
   btn.disabled = true; btn.classList.add('loading');
   document.getElementById('st').textContent = '📡 正在获取实时股价...';
@@ -475,25 +518,15 @@ async function refresh(){
   document.getElementById('msDot').className = 'ms-dot '+(ms.open?'open':'closed');
   document.getElementById('msText').textContent = ms.text;
 
-  try{
-    var r = await fetch('https://qt.gtimg.cn/q='+ALL_CODES.join(','));
-    var buf = await r.arrayBuffer();
-    var d = new TextDecoder('gbk').decode(buf);
-    var nd = {};
-    d.split('\n').filter(Boolean).forEach(function(l){
-      var m = l.match(/v_[^=]+="([^"]+)"/);
-      if(m){
-        var a = m[1].split('~');
-        if(a.length > 32) nd[a[2]] = parseFloat(a[32]) || 0;
-      }
-    });
-
+  loadStockData(ALL_CODES, 8000).then(function(nd){
     // Update holdings with live data
     Object.keys(FD).forEach(function(k){
       FD[k].holdings.forEach(function(h){
         var raw = h.code.replace(/^(sh|sz)/,'');
-        h.live = nd[raw] !== undefined ? nd[raw] : h.live || 0;
-        h.contrib = (h.live || 0) * h.weight / 100;
+        if(nd[raw] !== undefined){
+          h.live = nd[raw];
+          h.contrib = nd[raw] * h.weight / 100;
+        }
       });
       calcEst(FD[k]);
     });
@@ -507,17 +540,20 @@ async function refresh(){
     document.getElementById('sstat').textContent = ms.open ? '实时更新中' : '已收盘';
 
     renderAll(currentFilter);
+    btn.disabled = false; btn.classList.remove('loading');
+    updateNextRefresh();
 
-  } catch(e) {
-    document.getElementById('st').textContent = '⚠️ 获取实时数据失败，显示离线数据';
+  }).catch(function(e){
+    document.getElementById('st').textContent = '⚠️ 实时数据获取失败，显示缓存数据';
     document.getElementById('sdot').className = 's-dot offline';
-    document.getElementById('sstat').textContent = '离线模式';
+    document.getElementById('sstat').textContent = '离线模式（'+e.message+'）';
     renderAll(currentFilter);
-  }
+    btn.disabled = false; btn.classList.remove('loading');
+    updateNextRefresh();
+  });
+}
 
-  btn.disabled = false; btn.classList.remove('loading');
-
-  // Next refresh countdown
+function updateNextRefresh(){
   var next = new Date(Date.now() + 120000);
   document.getElementById('snext').textContent = '下次刷新: ' + next.toLocaleTimeString('zh-CN');
 }
