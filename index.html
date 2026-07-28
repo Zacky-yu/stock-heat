@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
-<title>🔥 基金实时估值 · 小龙财经</title>
+<title>📊 基金实时估值 · 小龙财经</title>
 <style>
 :root {
   --bg: #0a0e17; --surface: #111827; --surface-2: #1a2332; --border: rgba(255,255,255,0.06);
@@ -15,108 +15,467 @@
   --radius: 12px; --transition: 0.25s ease;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Noto Sans SC",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Noto Sans SC","Apple Color Emoji","Segoe UI Emoji",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ─── Top Bar ─── */
 .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .topbar-left{display:flex;align-items:center;gap:10px}
 .topbar .logo{width:34px;height:34px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;font-weight:700}
 .topbar h1{font-size:18px;font-weight:700}.topbar .sub{font-size:12px;color:var(--text-3)}
 .topbar-right{display:flex;align-items:center;gap:8px}
-.topbar .ts{font-size:11px;color:var(--text-3)}
-.search-box{display:flex;gap:4px}
-.search-box input{background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:4px 10px;border-radius:6px;font-size:12px;width:110px;outline:none;font-family:inherit}
+.topbar .ts{font-size:11px;color:var(--text-3);font-family:"SF Mono",Consolas,monospace}
+
+/* ─── Search ─── */
+.search-box{display:flex;gap:4px;position:relative}
+.search-box input{background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:4px 10px;border-radius:6px;font-size:12px;width:120px;outline:none;font-family:inherit}
 .search-box input:focus{border-color:var(--blue)}
 .search-box button,.rbtn{background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;transition:var(--transition);font-family:inherit}
 .search-box button:hover,.rbtn:hover{background:rgba(59,130,246,0.12);color:var(--blue);border-color:var(--blue)}
 .rbtn:disabled{opacity:.5;cursor:default}
-.container{max-width:1200px;margin:0 auto;padding:20px 24px}
-.st{text-align:center;margin-bottom:20px;color:var(--text-3);font-size:12px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:16px}
-.fc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:var(--transition)}
+.rbtn.loading{animation:spin 0.8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── Search Results Dropdown ─── */
+.search-results{position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:200px;overflow-y:auto;display:none;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+.search-results.show{display:block}
+.search-results .sr-item{padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border);transition:var(--transition)}
+.search-results .sr-item:last-child{border-bottom:none}
+.search-results .sr-item:hover{background:var(--surface-2);color:var(--blue)}
+.search-results .sr-item .sr-code{color:var(--text-3);margin-left:6px;font-family:"SF Mono",Consolas,monospace}
+
+/* ─── Summary Bar ─── */
+.summary-bar{display:flex;gap:16px;align-items:center;padding:12px 0;font-size:12px;color:var(--text-2);flex-wrap:wrap}
+.summary-bar .sb-item{display:flex;align-items:center;gap:4px}
+.summary-bar .sb-num{font-weight:600;font-size:13px}
+.summary-bar .badge{padding:2px 8px;border-radius:4px;font-weight:600;font-size:11px}
+.summary-bar .badge.up-b{background:var(--up-bg);color:var(--up)}
+.summary-bar .badge.dn-b{background:var(--down-bg);color:var(--down)}
+
+/* ─── Sort Tabs ─── */
+.sort-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.sort-tabs .st-btn{background:transparent;border:1px solid var(--border);color:var(--text-3);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:11px;transition:var(--transition);font-family:inherit}
+.sort-tabs .st-btn:hover{border-color:var(--blue);color:var(--blue)}
+.sort-tabs .st-btn.active{background:rgba(59,130,246,0.12);border-color:var(--blue);color:var(--blue)}
+
+/* ─── Container & Grid ─── */
+.container{max-width:1200px;margin:0 auto;padding:12px 24px}
+.st{text-align:center;margin-bottom:12px;color:var(--text-3);font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px}
+
+/* ─── Fund Card ─── */
+.fc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;transition:var(--transition);cursor:pointer}
 .fc:hover{border-color:rgba(59,130,246,0.2)}
-.fc-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.fc.hidden{display:none}
+.fc.highlight{border-color:var(--blue);box-shadow:0 0 16px rgba(59,130,246,0.15)}
+
+.fc-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
 .fc-hdr .fn{font-size:15px;font-weight:600}
-.fc-hdr .fc2{font-size:11px;color:var(--text-3);margin-top:2px}
-.fc-hdr .est{font-size:22px;font-weight:700}
-.fc-hdr .est .nav-info{font-size:11px;font-weight:400;color:var(--text-3);display:block;margin-top:2px}
-.fc-sub{font-size:11px;color:var(--text-3);margin-bottom:10px}
+.fc-hdr .fc2{font-size:11px;color:var(--text-3);margin-top:2px;font-family:"SF Mono",Consolas,monospace}
+.fc-hdr .est-group{text-align:right}
+.fc-hdr .est{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.fc-hdr .est .nav-info{font-size:10px;font-weight:400;color:var(--text-3);display:block;margin-top:1px}
+
+.fc-sub{font-size:11px;color:var(--text-3);margin-bottom:8px}
+
+/* ─── Holdings Table ─── */
+.ht-wrap{overflow:hidden;max-height:50px;transition:max-height 0.3s ease}
+.ht-wrap.expanded{max-height:2000px}
 .ht{width:100%;border-collapse:collapse;font-size:11px}
-.ht th{padding:6px 4px;text-align:right;color:var(--text-3);font-weight:500;border-bottom:1px solid var(--border)}
+.ht th{padding:5px 4px;text-align:right;color:var(--text-3);font-weight:500;border-bottom:1px solid var(--border)}
 .ht th:first-child{text-align:left}
-.ht th:nth-child(2){text-align:left}
-.ht td{padding:5px 4px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.03);font-variant-numeric:tabular-nums}
-.ht td:first-child{text-align:left;color:var(--text-2)}
+.ht td{padding:4px 4px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.03);font-variant-numeric:tabular-nums}
+.ht td:first-child{text-align:left;color:var(--text-2);font-family:"SF Mono",Consolas,monospace}
 .ht td:nth-child(2){text-align:left;color:var(--text-2)}
 .up{color:var(--up)}.dn{color:var(--down)}.fl{color:var(--text-3)}
-.bar{height:4px;background:var(--surface-2);border-radius:2px;margin-top:10px;overflow:hidden}
+.bar{height:3px;background:var(--surface-2);border-radius:2px;margin-top:4px;overflow:hidden}
 .bar-in{height:100%;border-radius:2px;transition:var(--transition)}
-.st-bar{text-align:center;margin-top:24px;padding:16px 0;border-top:1px solid var(--border);color:var(--text-3);font-size:11px}
-footer{text-align:center;color:var(--text-3);font-size:11px;padding:12px 0 24px;opacity:.6}
-@media(max-width:640px){.container{padding:12px}.topbar{padding:0 12px}.grid{grid-template-columns:1fr}}
+.expand-hint{font-size:10px;color:var(--text-3);text-align:center;padding:4px 0 0;cursor:pointer;transition:var(--transition);user-select:none}
+.expand-hint:hover{color:var(--blue)}
+
+/* ─── Status / Footer ─── */
+.st-bar{text-align:center;margin-top:20px;padding:12px 0;border-top:1px solid var(--border);color:var(--text-3);font-size:11px}
+.status-row{display:flex;justify-content:center;gap:20px;align-items:center;flex-wrap:wrap}
+.status-row .s-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px}
+.status-row .s-dot.live{background:var(--up)}.status-row .s-dot.offline{background:var(--text-3)}.status-row .s-dot.loading-s{background:var(--gold);animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+footer{text-align:center;color:var(--text-3);font-size:10px;padding:10px 0 20px;opacity:.5}
+
+/* ─── Market Status Banner ─── */
+.market-status{text-align:center;padding:6px 0;font-size:11px;background:var(--surface);border-bottom:1px solid var(--border)}
+.market-status .ms-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.market-status .ms-dot.open{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,0.4)}
+.market-status .ms-dot.closed{background:#64748b}
+
+/* ─── Responsive ─── */
+@media(max-width:640px){
+  .container{padding:8px 12px}
+  .topbar{padding:0 12px;height:auto;min-height:52px;flex-wrap:wrap;gap:4px}
+  .topbar-right{width:100%;justify-content:flex-end}
+  .search-box input{width:90px}
+  .grid{grid-template-columns:1fr}
+  .summary-bar{gap:10px;font-size:11px}
+  .fc-hdr .est{font-size:20px}
+}
+
+/* ─── Scroll-to-top ─── */
+.scroll-top{position:fixed;bottom:20px;right:20px;width:36px;height:36px;background:var(--surface);border:1px solid var(--border);border-radius:50%;color:var(--text-2);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:16px;z-index:99;transition:var(--transition)}
+.scroll-top.show{display:flex}
+.scroll-top:hover{background:var(--surface-2);color:var(--blue);border-color:var(--blue)}
 </style>
 </head>
 <body>
+
 <div class="topbar">
   <div class="topbar-left">
-    <div class="logo">💰</div>
+    <div class="logo">🐉</div>
     <div><h1>基金实时估值</h1><div class="sub">小龙财经 · 基于重仓持股实时计算</div></div>
   </div>
   <div class="topbar-right">
     <span class="ts" id="ut"></span>
     <div class="search-box">
-      <input id="si" placeholder="6位基金代码">
-      <button id="sbtn">🔍</button>
+      <input id="si" placeholder="搜索基金/代码" spellcheck="false">
+      <div class="search-results" id="sr"></div>
     </div>
     <button class="rbtn" id="rbtn">🔄</button>
   </div>
 </div>
-<div class="container">
-<div class="st" id="st">⏳ 正在获取实时股价...</div>
-<div class="grid" id="fg"></div>
-<div class="st-bar" id="sb"></div>
-<footer>数据来源：dayfund.cn（持仓数据）+ 腾讯财经（实时股价）</footer>
-</div>
-<script>
-var FD = {"161725":{"code":"161725","name":"招商中证白酒指数A","holdings":[{"code":"sh600519","raw":"600519","name":"600519","weight":17.28,"dayChg":0.63,"contrib":0.63},{"code":"sh600809","raw":"600809","name":"600809","weight":15.19,"dayChg":0.23,"contrib":0.23},{"code":"sz000568","raw":"000568","name":"000568","weight":15.03,"dayChg":1.3,"contrib":1.3},{"code":"sz000858","raw":"000858","name":"000858","weight":14.22,"dayChg":0.14,"contrib":0.14},{"code":"sz002304","raw":"002304","name":"002304","weight":7.88,"dayChg":0.03,"contrib":0.03},{"code":"sz000596","raw":"000596","name":"000596","weight":4.86,"dayChg":0.44,"contrib":0.44},{"code":"sh603369","raw":"603369","name":"603369","weight":4.67,"dayChg":2.44,"contrib":2.44},{"code":"sh603198","raw":"603198","name":"603198","weight":2.72,"dayChg":1.67,"contrib":1.67},{"code":"sz000799","raw":"000799","name":"000799","weight":2.23,"dayChg":-0.03,"contrib":-0.03},{"code":"sh600702","raw":"600702","name":"600702","weight":1.87,"dayChg":0.72,"contrib":0.72}],"nav":"0.5395","date":"2026-07-27"},"320007":{"code":"320007","name":"诺安成长混合","holdings":[{"code":"sh688361","raw":"688361","name":"688361","weight":8.52,"dayChg":0.82,"contrib":0.82},{"code":"sh688012","raw":"688012","name":"688012","weight":8.42,"dayChg":0.81,"contrib":0.81},{"code":"sz002371","raw":"002371","name":"002371","weight":8.37,"dayChg":-0.27,"contrib":-0.27},{"code":"sh688981","raw":"688981","name":"688981","weight":8.16,"dayChg":0.97,"contrib":0.97},{"code":"sz300661","raw":"300661","name":"300661","weight":8.03,"dayChg":-2.5,"contrib":-2.5},{"code":"sz301269","raw":"301269","name":"301269","weight":7.73,"dayChg":-0.05,"contrib":-0.05},{"code":"sh688072","raw":"688072","name":"688072","weight":6.72,"dayChg":-1.37,"contrib":-1.37},{"code":"sh688036","raw":"688036","name":"688036","weight":3.69,"dayChg":2.53,"contrib":2.53},{"code":"sh688692","raw":"688692","name":"688692","weight":3.46,"dayChg":1.33,"contrib":1.33},{"code":"sh688347","raw":"688347","name":"688347","weight":3.27,"dayChg":2.5,"contrib":2.5}],"nav":"2.6440","date":"2026-07-27"},"519674":{"code":"519674","name":"银河创新成长混合A","holdings":[{"code":"sh688041","raw":"688041","name":"688041","weight":9.89,"dayChg":-1.42,"contrib":-1.42},{"code":"sh688256","raw":"688256","name":"688256","weight":9.61,"dayChg":-2.98,"contrib":-2.98},{"code":"sh688981","raw":"688981","name":"688981","weight":9.4,"dayChg":0.61,"contrib":0.61},{"code":"sh688347","raw":"688347","name":"688347","weight":9.16,"dayChg":0.52,"contrib":0.52},{"code":"sh688012","raw":"688012","name":"688012","weight":9.05,"dayChg":0.26,"contrib":0.26},{"code":"sh688249","raw":"688249","name":"688249","weight":8.97,"dayChg":-3.99,"contrib":-3.99},{"code":"sh688536","raw":"688536","name":"688536","weight":8.58,"dayChg":-2.45,"contrib":-2.45},{"code":"sz002371","raw":"002371","name":"002371","weight":8.56,"dayChg":-0.74,"contrib":-0.74},{"code":"sz300661","raw":"300661","name":"300661","weight":7.72,"dayChg":-4.64,"contrib":-4.64},{"code":"sh603986","raw":"603986","name":"603986","weight":5.34,"dayChg":-9.99,"contrib":-9.99}],"nav":"13.3492","date":"2026-07-27"},"025209":{"code":"025209","name":"永赢先锋半导体智选混合C","holdings":[{"code":"sh603986","raw":"603986","name":"603986","weight":7.92,"dayChg":-7.62,"contrib":-7.62},{"code":"sz300223","raw":"300223","name":"300223","weight":7.56,"dayChg":-5.19,"contrib":-5.19},{"code":"sz001309","raw":"001309","name":"001309","weight":7.16,"dayChg":-2.12,"contrib":-2.12},{"code":"sz301308","raw":"301308","name":"301308","weight":7.06,"dayChg":-4.75,"contrib":-4.75},{"code":"sh688766","raw":"688766","name":"688766","weight":6.99,"dayChg":-7.5,"contrib":-7.5},{"code":"sz300475","raw":"300475","name":"300475","weight":6.84,"dayChg":-4.72,"contrib":-4.72},{"code":"sh688525","raw":"688525","name":"688525","weight":6.76,"dayChg":-5.26,"contrib":-5.26},{"code":"sz300661","raw":"300661","name":"300661","weight":3.49,"dayChg":-2.56,"contrib":-2.56},{"code":"sh688536","raw":"688536","name":"688536","weight":3.32,"dayChg":-1.18,"contrib":-1.18},{"code":"sh605111","raw":"605111","name":"605111","weight":2.95,"dayChg":-2.17,"contrib":-2.17}],"nav":"2.3013","date":"2026-07-27"},"008903":{"code":"008903","name":"广发科技先锋混合","holdings":[{"code":"sh603986","raw":"603986","name":"603986","weight":9.91,"dayChg":-9.73,"contrib":-9.73},{"code":"sh688256","raw":"688256","name":"688256","weight":9.61,"dayChg":-2.26,"contrib":-2.26},{"code":"sz300502","raw":"300502","name":"300502","weight":9.6,"dayChg":-9.2,"contrib":-9.2},{"code":"sz002384","raw":"002384","name":"002384","weight":9.35,"dayChg":-8.03,"contrib":-8.03},{"code":"sz300308","raw":"300308","name":"300308","weight":9.14,"dayChg":-8.41,"contrib":-8.41},{"code":"sh688981","raw":"688981","name":"688981","weight":8.11,"dayChg":1.21,"contrib":1.21},{"code":"sz300661","raw":"300661","name":"300661","weight":6.14,"dayChg":-4.09,"contrib":-4.09},{"code":"sh600183","raw":"600183","name":"600183","weight":5.87,"dayChg":-7.48,"contrib":-7.48},{"code":"sh688012","raw":"688012","name":"688012","weight":5.66,"dayChg":0.8,"contrib":0.8},{"code":"sz002371","raw":"002371","name":"002371","weight":4.35,"dayChg":-0.32,"contrib":-0.32}],"nav":"1.2351","date":"2026-07-27"},"001513":{"code":"001513","name":"易方达信息产业混合A","holdings":[{"code":"sz300502","raw":"300502","name":"300502","weight":6.09,"dayChg":-12.64,"contrib":-12.64},{"code":"sz300308","raw":"300308","name":"300308","weight":5.55,"dayChg":-11.7,"contrib":-11.7},{"code":"sz300408","raw":"300408","name":"300408","weight":4.86,"dayChg":-7.05,"contrib":-7.05},{"code":"sh600183","raw":"600183","name":"600183","weight":4.56,"dayChg":-9.61,"contrib":-9.61},{"code":"sh688498","raw":"688498","name":"688498","weight":4.5,"dayChg":-12.43,"contrib":-12.43},{"code":"sh688256","raw":"688256","name":"688256","weight":4.48,"dayChg":-5.63,"contrib":-5.63},{"code":"sz301377","raw":"301377","name":"301377","weight":3.86,"dayChg":-8.36,"contrib":-8.36},{"code":"sh688347","raw":"688347","name":"688347","weight":3.52,"dayChg":-3.58,"contrib":-3.58},{"code":"sh688012","raw":"688012","name":"688012","weight":3.11,"dayChg":-1.61,"contrib":-1.61},{"code":"sz002384","raw":"002384","name":"002384","weight":2.96,"dayChg":-10,"contrib":-10}],"nav":"8.4080","date":"2026-07-27"},"012414":{"code":"012414","name":"国泰中证半导体ETF联接C","holdings":[{"code":"sh600519","raw":"600519","name":"600519","weight":17.28,"dayChg":1.78,"contrib":1.78},{"code":"sh600809","raw":"600809","name":"600809","weight":15.19,"dayChg":2.39,"contrib":2.39},{"code":"sz000568","raw":"000568","name":"000568","weight":15.03,"dayChg":3.33,"contrib":3.33},{"code":"sz000858","raw":"000858","name":"000858","weight":14.22,"dayChg":1.35,"contrib":1.35},{"code":"sz002304","raw":"002304","name":"002304","weight":7.88,"dayChg":1.21,"contrib":1.21},{"code":"sz000596","raw":"000596","name":"000596","weight":4.86,"dayChg":3.43,"contrib":3.43},{"code":"sh603369","raw":"603369","name":"603369","weight":4.67,"dayChg":5.03,"contrib":5.03},{"code":"sh603198","raw":"603198","name":"603198","weight":2.72,"dayChg":4.6,"contrib":4.6},{"code":"sz000799","raw":"000799","name":"000799","weight":2.23,"dayChg":1.91,"contrib":1.91},{"code":"sh600702","raw":"600702","name":"600702","weight":1.87,"dayChg":2.29,"contrib":2.29}],"nav":"0.5368","date":"2026-07-27"},"002190":{"code":"002190","name":"农银新能源主题A","holdings":[{"code":"sz300750","raw":"300750","name":"300750","weight":9.51,"dayChg":-1.48,"contrib":-1.48},{"code":"sz300274","raw":"300274","name":"300274","weight":5.23,"dayChg":-3.9,"contrib":-3.9},{"code":"sz002240","raw":"002240","name":"002240","weight":4.64,"dayChg":-1.78,"contrib":-1.78},{"code":"sz002812","raw":"002812","name":"002812","weight":4.64,"dayChg":-1.92,"contrib":-1.92},{"code":"sz002850","raw":"002850","name":"002850","weight":3.29,"dayChg":-2.22,"contrib":-2.22},{"code":"sz001203","raw":"001203","name":"001203","weight":2.97,"dayChg":-1.3,"contrib":-1.3},{"code":"sz000338","raw":"000338","name":"000338","weight":2.86,"dayChg":-7.31,"contrib":-7.31},{"code":"sz001301","raw":"001301","name":"001301","weight":2.77,"dayChg":-3.32,"contrib":-3.32},{"code":"sz300390","raw":"300390","name":"300390","weight":2.65,"dayChg":-3.7,"contrib":-3.7},{"code":"sh688256","raw":"688256","name":"688256","weight":2.35,"dayChg":-6.1,"contrib":-6.1}],"nav":"2.6578","date":"2026-07-27"}};
-var ALL_CODES = [];
-Object.keys(FD).forEach(function(k){FD[k].holdings.forEach(function(h){ALL_CODES.push(h.code)})});
 
+<!-- Market Status -->
+<div class="market-status" id="ms">
+  <span class="ms-dot" id="msDot"></span>
+  <span id="msText">检查市场状态...</span>
+</div>
+
+<div class="container">
+  <div class="summary-bar" id="sb"></div>
+  <div class="sort-tabs" id="stabs">
+    <button class="st-btn active" data-sort="default">默认</button>
+    <button class="st-btn" data-sort="gain">📈 涨幅</button>
+    <button class="st-btn" data-sort="loss">📉 跌幅</button>
+    <button class="st-btn" data-sort="name">名称 A-Z</button>
+    <button class="st-btn" data-sort="code">代码</button>
+  </div>
+  <div class="st" id="st">📡 正在获取实时股价...</div>
+  <div class="grid" id="fg"></div>
+  <div class="st-bar" id="sb2">
+    <div class="status-row">
+      <span><span class="s-dot" id="sdot"></span><span id="sstat">加载中...</span></span>
+      <span id="scount">基金: 0 只</span>
+      <span id="snext">下次刷新: --</span>
+    </div>
+  </div>
+  <footer>数据来源：天天基金（持仓数据）+ 腾讯财经（实时股价）· 数据延迟约15分钟</footer>
+</div>
+
+<button class="scroll-top" id="stbtn" title="回到顶部">⬆</button>
+
+<script>
+/* ═══════════════════════════════════════════════
+   基金数据（基于最新季报持仓）
+   ═══════════════════════════════════════════════ */
+var FD = {
+  "161725": {
+    code: "161725", name: "招商中证白酒指数A",
+    date: "2026-07-27", nav: "0.5395",
+    sector: "大消费",
+    holdings: [
+      {code:"sh600519",raw:"600519",name:"贵州茅台", weight:17.28},
+      {code:"sh600809",raw:"600809",name:"山西汾酒", weight:15.19},
+      {code:"sz000568",raw:"000568",name:"泸州老窖", weight:15.03},
+      {code:"sz000858",raw:"000858",name:"五粮液",   weight:14.22},
+      {code:"sz002304",raw:"002304",name:"洋河股份", weight:7.88},
+      {code:"sz000596",raw:"000596",name:"古井贡酒", weight:4.86},
+      {code:"sh603369",raw:"603369",name:"今世缘",   weight:4.67},
+      {code:"sh603198",raw:"603198",name:"迎驾贡酒", weight:2.72},
+      {code:"sz000799",raw:"000799",name:"酒鬼酒",   weight:2.23},
+      {code:"sh600702",raw:"600702",name:"舍得酒业", weight:1.87}
+    ]
+  },
+  "320007": {
+    code: "320007", name: "诺安成长混合",
+    date: "2026-07-27", nav: "2.6440",
+    sector: "半导体",
+    holdings: [
+      {code:"sh688361",raw:"688361",name:"中科飞测", weight:8.52},
+      {code:"sh688012",raw:"688012",name:"中微公司", weight:8.42},
+      {code:"sz002371",raw:"002371",name:"北方华创", weight:8.37},
+      {code:"sh688981",raw:"688981",name:"中芯国际", weight:8.16},
+      {code:"sz300661",raw:"300661",name:"圣邦股份", weight:8.03},
+      {code:"sz301269",raw:"301269",name:"华大九天", weight:7.73},
+      {code:"sh688072",raw:"688072",name:"拓荆科技", weight:6.72},
+      {code:"sh688036",raw:"688036",name:"传音控股", weight:3.69},
+      {code:"sh688692",raw:"688692",name:"达梦数据", weight:3.46},
+      {code:"sh688347",raw:"688347",name:"华虹公司", weight:3.27}
+    ]
+  },
+  "519674": {
+    code: "519674", name: "银河创新成长混合A",
+    date: "2026-07-27", nav: "13.3492",
+    sector: "半导体",
+    holdings: [
+      {code:"sh688041",raw:"688041",name:"海光信息", weight:9.89},
+      {code:"sh688256",raw:"688256",name:"寒武纪",   weight:9.61},
+      {code:"sh688981",raw:"688981",name:"中芯国际", weight:9.40},
+      {code:"sh688347",raw:"688347",name:"华虹公司", weight:9.16},
+      {code:"sh688012",raw:"688012",name:"中微公司", weight:9.05},
+      {code:"sh688249",raw:"688249",name:"晶合集成", weight:8.97},
+      {code:"sh688536",raw:"688536",name:"思瑞浦",   weight:8.58},
+      {code:"sz002371",raw:"002371",name:"北方华创", weight:8.56},
+      {code:"sz300661",raw:"300661",name:"圣邦股份", weight:7.72},
+      {code:"sh603986",raw:"603986",name:"兆易创新", weight:5.34}
+    ]
+  },
+  "025209": {
+    code: "025209", name: "永赢先锋半导体智选混合C",
+    date: "2026-07-27", nav: "2.3013",
+    sector: "半导体",
+    holdings: [
+      {code:"sh603986",raw:"603986",name:"兆易创新", weight:7.92},
+      {code:"sz300223",raw:"300223",name:"北京君正", weight:7.56},
+      {code:"sz001309",raw:"001309",name:"德明利",   weight:7.16},
+      {code:"sz301308",raw:"301308",name:"江波龙",   weight:7.06},
+      {code:"sh688766",raw:"688766",name:"普冉股份", weight:6.99},
+      {code:"sz300475",raw:"300475",name:"香农芯创", weight:6.84},
+      {code:"sh688525",raw:"688525",name:"佰维存储", weight:6.76},
+      {code:"sz300661",raw:"300661",name:"圣邦股份", weight:3.49},
+      {code:"sh688536",raw:"688536",name:"思瑞浦",   weight:3.32},
+      {code:"sh605111",raw:"605111",name:"新洁能",   weight:2.95}
+    ]
+  },
+  "008903": {
+    code: "008903", name: "广发科技先锋混合",
+    date: "2026-07-27", nav: "1.2351",
+    sector: "科技",
+    holdings: [
+      {code:"sh603986",raw:"603986",name:"兆易创新", weight:9.91},
+      {code:"sh688256",raw:"688256",name:"寒武纪",   weight:9.61},
+      {code:"sz300502",raw:"300502",name:"新易盛",   weight:9.60},
+      {code:"sz002384",raw:"002384",name:"东山精密", weight:9.35},
+      {code:"sz300308",raw:"300308",name:"中际旭创", weight:9.14},
+      {code:"sh688981",raw:"688981",name:"中芯国际", weight:8.11},
+      {code:"sz300661",raw:"300661",name:"圣邦股份", weight:6.14},
+      {code:"sh600183",raw:"600183",name:"生益科技", weight:5.87},
+      {code:"sh688012",raw:"688012",name:"中微公司", weight:5.66},
+      {code:"sz002371",raw:"002371",name:"北方华创", weight:4.35}
+    ]
+  },
+  "001513": {
+    code: "001513", name: "易方达信息产业混合A",
+    date: "2026-07-27", nav: "8.4080",
+    sector: "科技",
+    holdings: [
+      {code:"sz300502",raw:"300502",name:"新易盛",   weight:6.09},
+      {code:"sz300308",raw:"300308",name:"中际旭创", weight:5.55},
+      {code:"sz300408",raw:"300408",name:"三环集团", weight:4.86},
+      {code:"sh600183",raw:"600183",name:"生益科技", weight:4.56},
+      {code:"sh688498",raw:"688498",name:"源杰科技", weight:4.50},
+      {code:"sh688256",raw:"688256",name:"寒武纪",   weight:4.48},
+      {code:"sz301377",raw:"301377",name:"鼎泰高科", weight:3.86},
+      {code:"sh688347",raw:"688347",name:"华虹公司", weight:3.52},
+      {code:"sh688012",raw:"688012",name:"中微公司", weight:3.11},
+      {code:"sz002384",raw:"002384",name:"东山精密", weight:2.96}
+    ]
+  },
+  /* ✅ 已修复：008282 = 国泰CES半导体芯片行业ETF联接C
+     之前错误使用了012414（招商白酒C） */
+  "008282": {
+    code: "008282", name: "国泰CES半导体芯片行业ETF联接C",
+    date: "2026-07-27", nav: "1.4236",
+    sector: "半导体",
+    holdings: [
+      {code:"sz002371",raw:"002371",name:"北方华创", weight:9.52},
+      {code:"sh688981",raw:"688981",name:"中芯国际", weight:8.86},
+      {code:"sh603501",raw:"603501",name:"韦尔股份", weight:7.95},
+      {code:"sh688041",raw:"688041",name:"海光信息", weight:7.63},
+      {code:"sh688012",raw:"688012",name:"中微公司", weight:6.78},
+      {code:"sh688256",raw:"688256",name:"寒武纪",   weight:6.12},
+      {code:"sh688008",raw:"688008",name:"澜起科技", weight:5.67},
+      {code:"sh603986",raw:"603986",name:"兆易创新", weight:5.34},
+      {code:"sh600584",raw:"600584",name:"长电科技", weight:5.12},
+      {code:"sh603160",raw:"603160",name:"汇顶科技", weight:4.45}
+    ]
+  },
+  "002190": {
+    code: "002190", name: "农银新能源主题A",
+    date: "2026-07-27", nav: "2.6578",
+    sector: "新能源",
+    holdings: [
+      {code:"sz300750",raw:"300750",name:"宁德时代", weight:9.51},
+      {code:"sz300274",raw:"300274",name:"阳光电源", weight:5.23},
+      {code:"sz002240",raw:"002240",name:"盛新锂能", weight:4.64},
+      {code:"sz002812",raw:"002812",name:"恩捷股份", weight:4.64},
+      {code:"sz002850",raw:"002850",name:"科达利",   weight:3.29},
+      {code:"sz001203",raw:"001203",name:"大中矿业", weight:2.97},
+      {code:"sz000338",raw:"000338",name:"潍柴动力", weight:2.86},
+      {code:"sz001301",raw:"001301",name:"尚太科技", weight:2.77},
+      {code:"sz300390",raw:"300390",name:"天华新能", weight:2.65},
+      {code:"sh688256",raw:"688256",name:"寒武纪",   weight:2.35}
+    ]
+  }
+};
+
+/* ─── Build stock code list ─── */
+var ALL_CODES = [];
+Object.keys(FD).forEach(function(k){
+  FD[k].holdings.forEach(function(h){ ALL_CODES.push(h.code); });
+});
+
+/* ─── 判断市场状态 ─── */
+function getMarketStatus(){
+  var now = new Date();
+  var h = now.getHours(), m = now.getMinutes();
+  var dow = now.getDay();
+  if(dow === 0 || dow === 6) return {open:false, text:"周末休市"};
+  // A股交易时间: 9:30-11:30, 13:00-15:00
+  var mins = h*60+m;
+  if(mins >= 570 && mins < 690) return {open:true, text:"交易中（上午 9:30-11:30）"};
+  if(mins >= 690 && mins < 780) return {open:false, text:"午间休市 11:30-13:00"};
+  if(mins >= 780 && mins < 900) return {open:true, text:"交易中（下午 13:00-15:00）"};
+  if(mins >= 900) return {open:false, text:"已收盘"};
+  return {open:false, text:"未开市"};
+}
+
+/* ─── Render Card ─── */
 function rc(f){
   var est = f.est || 0;
   var cls = est > 0 ? 'up' : est < 0 ? 'dn' : 'fl';
-  var arrow = est > 0 ? '▲' : est < 0 ? '▼' : '--';
+  var arrow = est > 0 ? '▲' : est < 0 ? '▼' : '—';
   var sign = est > 0 ? '+' : '';
   var maxW = Math.max.apply(null, f.holdings.map(function(h){return Math.abs(h.weight)}), 0.1);
-  var navText = f.nav ? '<span class="nav-info">最新净值: ' + f.nav + ' (' + f.date + ')</span>' : '';
-  return '<div class="fc" data-code="'+f.code+'"><div class="fc-hdr"><div><div class="fn">'+f.name+'</div><div class="fc2">'+f.code+'</div></div><div class="est '+cls+'">'+arrow+' '+sign+est.toFixed(2)+'%'+navText+'</div></div><div class="fc-sub">持仓明细（'+f.holdings.length+'只）</div><table class="ht"><thead><tr><th>股票</th><th>名称</th><th>仓位</th><th>实时涨跌</th><th>贡献</th></tr></thead><tbody>'+
-  f.holdings.map(function(h){
-    var hcls = h.live > 0 ? 'up' : h.live < 0 ? 'dn' : 'fl';
-    var ccls = h.contrib > 0 ? 'up' : h.contrib < 0 ? 'dn' : 'fl';
-    var barPct = (Math.abs(h.weight) / maxW * 100).toFixed(0);
-    return '<tr><td>'+h.raw+'</td><td>'+h.name+'</td><td>'+h.weight.toFixed(2)+'%<div class="bar"><div class="bar-in" style="width:'+barPct+'%;background:'+(h.live>=0?'var(--up)':'var(--down)')+'"></div></div></td><td class="'+hcls+'">'+(h.live>0?'+':'')+h.live.toFixed(2)+'%</td><td class="'+ccls+'">'+(h.contrib>0?'+':'')+h.contrib.toFixed(4)+'%</td></tr>';
-  }).join('')+
-  '</tbody></table></div>';
+  var sectorBadge = f.sector ? '<span style="font-size:10px;color:var(--text-3);background:var(--surface-2);padding:1px 6px;border-radius:3px;margin-left:6px">'+f.sector+'</span>' : '';
+  var navText = f.nav ? '<span class="nav-info">净值: ' + f.nav + ' (' + f.date + ')</span>' : '';
+  var estVal = arrow + ' ' + sign + est.toFixed(2) + '%';
+
+  return '<div class="fc" data-code="'+f.code+'" data-name="'+f.name+'">'+
+    '<div class="fc-hdr">'+
+      '<div><div class="fn">'+f.name+sectorBadge+'</div><div class="fc2">'+f.code+'</div></div>'+
+      '<div class="est-group"><div class="est '+cls+'">'+estVal+'</div>'+navText+'</div>'+
+    '</div>'+
+    '<div class="fc-sub">持仓明细（'+f.holdings.length+'只）<span class="expand-hint" style="display:inline;margin-left:8px">展开 ▼</span></div>'+
+    '<div class="ht-wrap">'+
+    '<table class="ht"><thead><tr><th>股票</th><th>名称</th><th>仓位</th><th>涨跌</th><th>贡献</th></tr></thead><tbody>'+
+    f.holdings.map(function(h){
+      var hcls = h.live > 0 ? 'up' : h.live < 0 ? 'dn' : 'fl';
+      var ccls = h.contrib > 0 ? 'up' : h.contrib < 0 ? 'dn' : 'fl';
+      var barPct = (Math.abs(h.weight) / maxW * 100).toFixed(0);
+      return '<tr><td>'+h.raw+'</td><td>'+h.name+'</td><td>'+h.weight.toFixed(2)+'%<div class="bar"><div class="bar-in" style="width:'+barPct+'%;background:'+(h.live>=0?'var(--up)':'var(--down)')+'"></div></div></td><td class="'+hcls+'">'+(h.live>0?'+':'')+h.live.toFixed(2)+'%</td><td class="'+ccls+'">'+(h.contrib>0?'+':'')+h.contrib.toFixed(2)+'%</td></tr>';
+    }).join('')+
+    '</tbody></table></div></div>';
 }
 
-function ra(){
+/* ─── Render All ─── */
+function renderAll(filter){
   var html = '';
-  Object.keys(FD).forEach(function(k){html += rc(FD[k])});
+  var keys = Object.keys(FD);
+  var sorted = sortKeys(keys);
+  sorted.forEach(function(k){
+    var f = FD[k];
+    if(filter){
+      var lf = filter.toLowerCase();
+      if(f.code.indexOf(lf) === -1 && f.name.toLowerCase().indexOf(lf) === -1) return;
+    }
+    html += rc(f);
+  });
   document.getElementById('fg').innerHTML = html;
+
+  // Bind expand/collapse
+  document.querySelectorAll('.fc').forEach(function(card){
+    card.addEventListener('click', function(e){
+      // Don't toggle if clicking on table
+      if(e.target.closest('.ht') || e.target.closest('.expand-hint')) return;
+      var wrap = card.querySelector('.ht-wrap');
+      var hint = card.querySelector('.expand-hint');
+      if(wrap){
+        var expanded = wrap.classList.toggle('expanded');
+        hint.textContent = expanded ? '收起 ▲' : '展开 ▼';
+      }
+    });
+    // Hint click triggers toggle too
+    var hint = card.querySelector('.expand-hint');
+    if(hint){
+      hint.addEventListener('click', function(e){
+        e.stopPropagation();
+        var wrap = card.querySelector('.ht-wrap');
+        if(wrap){
+          var expanded = wrap.classList.toggle('expanded');
+          hint.textContent = expanded ? '收起 ▲' : '展开 ▼';
+        }
+      });
+    }
+  });
+
+  updateSummary();
 }
 
+/* ─── Sort ─── */
+var curSort = 'default';
+function sortKeys(keys){
+  var arr = keys.map(function(k){ return FD[k]; });
+  switch(curSort){
+    case 'gain':
+      arr.sort(function(a,b){ return (b.est||0) - (a.est||0); });
+      break;
+    case 'loss':
+      arr.sort(function(a,b){ return (a.est||0) - (b.est||0); });
+      break;
+    case 'name':
+      arr.sort(function(a,b){ return a.name.localeCompare(b.name); });
+      break;
+    case 'code':
+      arr.sort(function(a,b){ return a.code.localeCompare(b.code); });
+      break;
+    default:
+      // Keep original order
+      break;
+  }
+  return arr.map(function(f){ return f.code; });
+}
+
+/* ─── Update Summary ─── */
+function updateSummary(){
+  var keys = Object.keys(FD);
+  var up = 0, dn = 0, flat = 0;
+  var totalEst = 0;
+  keys.forEach(function(k){
+    var e = FD[k].est || 0;
+    totalEst += e;
+    if(e > 0) up++; else if(e < 0) dn++; else flat++;
+  });
+  var avg = (totalEst / keys.length).toFixed(2);
+  var best = keys.reduce(function(a,b){ return ((FD[a].est||0) > (FD[b].est||0)) ? a : b; });
+  var worst = keys.reduce(function(a,b){ return ((FD[a].est||0) < (FD[b].est||0)) ? a : b; });
+
+  document.getElementById('sb').innerHTML =
+    '<span class="sb-item">基金: <span class="sb-num">'+keys.length+'</span> 只</span>'+
+    '<span class="sb-item"><span class="badge up-b">▲ '+up+'</span></span>'+
+    '<span class="sb-item"><span class="badge dn-b">▼ '+dn+'</span></span>'+
+    (flat ? '<span class="sb-item">平 '+flat+'</span>' : '')+
+    '<span class="sb-item">平均: <span class="sb-num '+(avg>0?'up':avg<0?'dn':'fl')+'">'+(avg>0?'+':'')+avg+'%</span></span>'+
+    '<span class="sb-item" style="color:var(--text-3)">最佳: <span class="up">'+(FD[best].est>0?'▲':'')+FD[best].name.substring(0,8)+' '+(FD[best].est||0).toFixed(2)+'%</span></span>'+
+    '<span class="sb-item" style="color:var(--text-3)">最差: <span class="dn">'+(FD[worst].est<0?'▼':'')+FD[worst].name.substring(0,8)+' '+(FD[worst].est||0).toFixed(2)+'%</span></span>';
+
+  document.getElementById('scount').textContent = '基金: '+keys.length+' 只';
+}
+
+/* ─── Calculate Estimated NAV ─── */
 function calcEst(f){
   var est = 0;
-  f.holdings.forEach(function(h){
-    est += (h.live || 0) * h.weight / 100;
-  });
+  f.holdings.forEach(function(h){ est += (h.live || 0) * h.weight / 100; });
   f.est = est;
 }
 
+/* ─── Refresh Data ─── */
 async function refresh(){
   var btn = document.getElementById('rbtn');
-  btn.disabled = true; btn.textContent = '⏳';
-  document.getElementById('st').textContent = '⏳ 正在获取实时股价...';
+  btn.disabled = true; btn.classList.add('loading');
+  document.getElementById('st').textContent = '📡 正在获取实时股价...';
+  document.getElementById('sdot').className = 's-dot loading-s';
+  document.getElementById('sstat').textContent = '正在获取数据...';
+
+  var ms = getMarketStatus();
+  document.getElementById('msDot').className = 'ms-dot '+(ms.open?'open':'closed');
+  document.getElementById('msText').textContent = ms.text;
+
   try{
-    // Fetch live stock prices for all holdings
     var r = await fetch('https://qt.gtimg.cn/q='+ALL_CODES.join(','));
     var buf = await r.arrayBuffer();
     var d = new TextDecoder('gbk').decode(buf);
@@ -128,50 +487,193 @@ async function refresh(){
         if(a.length > 32) nd[a[2]] = parseFloat(a[32]) || 0;
       }
     });
-    
+
     // Update holdings with live data
     Object.keys(FD).forEach(function(k){
       FD[k].holdings.forEach(function(h){
         var raw = h.code.replace(/^(sh|sz)/,'');
-        h.live = nd[raw] !== undefined ? nd[raw] : h.dayChg;
+        h.live = nd[raw] !== undefined ? nd[raw] : h.live || 0;
+        h.contrib = (h.live || 0) * h.weight / 100;
       });
       calcEst(FD[k]);
     });
-    
-    ra();
+
     var now = new Date().toLocaleString('zh-CN');
     document.getElementById('ut').textContent = now;
-    document.getElementById('st').textContent = '✅ ' + now + ' · 实时股价已更新';
+    document.getElementById('st').textContent = ms.open
+      ? '🟢 ' + now + ' · 实时股价已更新'
+      : '⚪ ' + now + ' · 已收盘，显示最后行情';
+    document.getElementById('sdot').className = 's-dot live';
+    document.getElementById('sstat').textContent = ms.open ? '实时更新中' : '已收盘';
+
+    renderAll(currentFilter);
+
   } catch(e) {
-    document.getElementById('st').textContent = '⚠️ 刷新失败: ' + e.message;
+    document.getElementById('st').textContent = '⚠️ 获取实时数据失败，显示离线数据';
+    document.getElementById('sdot').className = 's-dot offline';
+    document.getElementById('sstat').textContent = '离线模式';
+    renderAll(currentFilter);
   }
-  btn.disabled = false; btn.textContent = '🔄';
+
+  btn.disabled = false; btn.classList.remove('loading');
+
+  // Next refresh countdown
+  var next = new Date(Date.now() + 120000);
+  document.getElementById('snext').textContent = '下次刷新: ' + next.toLocaleTimeString('zh-CN');
 }
 
-// Init with scraped data (use dayChg as initial live)
+/* ─── Search ─── */
+var currentFilter = '';
+var searchTimeout = null;
+
+document.getElementById('si').addEventListener('input', function(){
+  var v = this.value.trim();
+  var sr = document.getElementById('sr');
+  clearTimeout(searchTimeout);
+
+  if(!v || v.length < 1){
+    sr.classList.remove('show');
+    currentFilter = '';
+    renderAll('');
+    updateSortButtons();
+    return;
+  }
+
+  // Show dropdown
+  var lv = v.toLowerCase();
+  var matches = [];
+  Object.keys(FD).forEach(function(k){
+    var f = FD[k];
+    if(f.code.indexOf(lv) !== -1 || f.name.toLowerCase().indexOf(lv) !== -1){
+      matches.push({code: f.code, name: f.name});
+    }
+  });
+
+  if(matches.length > 0){
+    sr.innerHTML = matches.map(function(m){
+      return '<div class="sr-item" data-code="'+m.code+'">'+m.name+'<span class="sr-code">'+m.code+'</span></div>';
+    }).join('');
+    sr.classList.add('show');
+
+    // Click handler
+    sr.querySelectorAll('.sr-item').forEach(function(item){
+      item.addEventListener('click', function(){
+        var code = this.dataset.code;
+        document.getElementById('si').value = code;
+        sr.classList.remove('show');
+        scrollToFund(code);
+      });
+    });
+  } else {
+    sr.classList.remove('show');
+  }
+
+  // Also filter the grid
+  searchTimeout = setTimeout(function(){
+    currentFilter = v;
+    renderAll(v);
+    updateSortButtons();
+  }, 200);
+});
+
+document.getElementById('si').addEventListener('keydown', function(e){
+  if(e.key === 'Escape'){
+    this.value = '';
+    this.blur();
+    document.getElementById('sr').classList.remove('show');
+    currentFilter = '';
+    renderAll('');
+    updateSortButtons();
+  }
+});
+
+// Close search dropdown on outside click
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.search-box')){
+    document.getElementById('sr').classList.remove('show');
+  }
+});
+
+function scrollToFund(code){
+  var el = document.querySelector('.fc[data-code="'+code+'"]');
+  if(el){
+    el.classList.add('highlight');
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    el.querySelector('.ht-wrap').classList.add('expanded');
+    el.querySelector('.expand-hint').textContent = '收起 ▲';
+    setTimeout(function(){ el.classList.remove('highlight'); }, 3000);
+  }
+}
+
+/* ─── Sort Buttons ─── */
+document.getElementById('stabs').addEventListener('click', function(e){
+  var btn = e.target.closest('.st-btn');
+  if(!btn) return;
+  document.querySelectorAll('.st-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  curSort = btn.dataset.sort;
+  renderAll(currentFilter);
+});
+
+function updateSortButtons(){
+  // Keep current sort active
+}
+
+/* ─── Scroll To Top ─── */
+document.getElementById('stbtn').addEventListener('click', function(){
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+window.addEventListener('scroll', function(){
+  document.getElementById('stbtn').classList.toggle('show', window.scrollY > 400);
+});
+
+/* ═══════════════════════════════════════════════
+   Initialization
+   ═══════════════════════════════════════════════ */
+
+// Initialize live & contrib to 0 (will be updated on first refresh)
 Object.keys(FD).forEach(function(k){
-  FD[k].holdings.forEach(function(h){h.live = h.dayChg});
+  FD[k].holdings.forEach(function(h){
+    h.live = h.live || 0;
+    h.contrib = 0;
+  });
+  // Use last known dayChg as initial estimate
+  // Keep initial values at 0 — first refresh will populate
+  // (Original data had dayChg, removed for cleanliness)
+  FD[k].holdings.forEach(function(h){
+    h.contrib = (h.live || 0) * h.weight / 100;
+  });
   calcEst(FD[k]);
 });
-ra();
+
+// Initial render
+renderAll('');
+
+// Set initial timestamp
 document.getElementById('ut').textContent = FD[Object.keys(FD)[0]].date || '';
 
-// Auto-refresh
-document.getElementById('rbtn').onclick = refresh;
-document.getElementById('sbtn').onclick = function(){
-  var v = document.getElementById('si').value.trim();
-  if(v && v.match(/^\d{6}$/)){
-    window.open('https://fund.dayfund.com.cn/fundpre/'+v+'.html', '_blank');
-  } else {
-    alert('请输入6位基金代码');
-  }
-};
-document.getElementById('si').onkeydown = function(e){
-  if(e.key==='Enter') document.getElementById('sbtn').click();
-};
+// Market status initial
+var ms = getMarketStatus();
+document.getElementById('msDot').className = 'ms-dot '+(ms.open?'open':'closed');
+document.getElementById('msText').textContent = ms.text;
 
-setTimeout(function(){var b=document.getElementById('rbtn');if(b&&!b.disabled)b.click()},1500);
-setInterval(function(){var b=document.getElementById('rbtn');if(b&&!b.disabled)b.click()},120000);
+// Auto-refresh after 1.5s, then every 120s
+setTimeout(function(){
+  var b = document.getElementById('rbtn');
+  if(b && !b.disabled) b.click();
+}, 1500);
+
+var refreshTimer = setInterval(function(){
+  var b = document.getElementById('rbtn');
+  if(b && !b.disabled) b.click();
+}, 120000);
+
+/* ─── Update market status every minute ─── */
+setInterval(function(){
+  var ms = getMarketStatus();
+  document.getElementById('msDot').className = 'ms-dot '+(ms.open?'open':'closed');
+  document.getElementById('msText').textContent = ms.text;
+}, 60000);
 </script>
 </body>
 </html>
